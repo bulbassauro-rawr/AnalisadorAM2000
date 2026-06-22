@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analisador de WhatsApp</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:20px;
+}
+
+table{
+    border-collapse: collapse;
+    margin-top:10px;
+}
+
+th,td{
+    border:1px solid #ccc;
+    padding:6px 10px;
+}
+
+.member{
+    margin-top:30px;
+    border-top:1px solid #ccc;
+    padding-top:15px;
+}
+</style>
+</head>
+<body>
+
+<h1>Analisador de Atividade</h1>
+
+<input type="file" id="fileInput">
+
+<p id="periodo"></p>
+
+<label>Data inicial:</label>
+<input type="date" id="inicio">
+
+<label>Data final:</label>
+<input type="date" id="fim">
+
+<button id="analisarBtn">Analisar</button>
+
+<div id="resultado"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
