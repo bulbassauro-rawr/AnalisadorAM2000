@@ -1,203 +1,228 @@
-let mensagens = [];
+let allMessages = [];
 
 const fileInput = document.getElementById("fileInput");
+const fileInfo = document.getElementById("fileInfo");
 
-fileInput.addEventListener("change", carregarArquivo);
+const periodSection =
+    document.getElementById("periodSection");
 
-function carregarArquivo(event){
+const conversationRange =
+    document.getElementById("conversationRange");
 
-    const arquivo = event.target.files[0];
+const startDate =
+    document.getElementById("startDate");
 
-    const reader = new FileReader();
+const endDate =
+    document.getElementById("endDate");
 
-    reader.onload = function(e){
+const analyzeBtn =
+    document.getElementById("analyzeBtn");
 
-        mensagens = [];
+const summarySection =
+    document.getElementById("summarySection");
 
-        const texto = e.target.result;
+const membersSection =
+    document.getElementById("membersSection");
 
-        const linhas = texto.split("\n");
+const memberDetails =
+    document.getElementById("memberDetails");
 
-        const regex =
-        /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s+(\d{1,2}):(\d{2})\s+-\s+(.*?):\s+(.*)$/;
+const memberSearch =
+    document.getElementById("memberSearch");
 
-        for(const linha of linhas){
+fileInput.addEventListener(
+    "change",
+    handleFileUpload
+);
 
-            const match = linha.match(regex);
+async function handleFileUpload(event){
 
-            if(!match) continue;
+    const file = event.target.files[0];
 
-            const dia = match[1];
-            const mes = match[2];
-            const ano = match[3].length === 2
-                ? "20" + match[3]
-                : match[3];
+    if(!file) return;
 
-            const hora = match[4];
-            const minuto = match[5];
+    fileInfo.innerHTML =
+        `<div class="loading">Carregando...</div>`;
 
-            const autor = match[6];
+    try{
 
-            const dataObj = new Date(
-                `${ano}-${mes.padStart(2,"0")}-${dia.padStart(2,"0")}T${hora.padStart(2,"0")}:${minuto}`
+        let text;
+
+        if(file.name.toLowerCase().endsWith(".txt")){
+
+            text = await file.text();
+
+        }else if(
+            file.name.toLowerCase().endsWith(".zip")
+        ){
+
+            text = await extractTxtFromZip(file);
+
+        }else{
+
+            throw new Error(
+                "Formato não suportado."
             );
 
-            mensagens.push({
-                data: dataObj,
-                autor
-            });
         }
 
-        if(mensagens.length === 0){
-            alert("Nenhuma mensagem encontrada.");
-            return;
-        }
+        processChat(text);
 
-        mensagens.sort((a,b)=>a.data-b.data);
+    }catch(error){
 
-        const primeira = mensagens[0].data;
-        const ultima = mensagens[mensagens.length-1].data;
-
-        document.getElementById("periodo").innerText =
-        `Mensagens de ${primeira.toLocaleString()} até ${ultima.toLocaleString()}`;
-
-    };
-
-    reader.readAsText(arquivo);
-}
-
-document.getElementById("analisarBtn")
-.addEventListener("click", analisar);
-
-function analisar(){
-
-    if(mensagens.length === 0){
-        alert("Carregue um arquivo primeiro.");
-        return;
-    }
-
-    const inicioValor = document.getElementById("inicio").value;
-    const fimValor = document.getElementById("fim").value;
-
-    if(!inicioValor || !fimValor){
-        alert("Selecione as datas.");
-        return;
-    }
-
-    const inicio = new Date(inicioValor);
-    const fim = new Date(fimValor);
-
-    fim.setHours(23,59,59,999);
-
-    const filtradas = mensagens.filter(
-        m => m.data >= inicio && m.data <= fim
-    );
-
-    const diasPeriodo =
-    Math.floor((fim-inicio)/(1000*60*60*24))+1;
-
-    const membros = {};
-
-    for(const msg of filtradas){
-
-        if(!membros[msg.autor]){
-            membros[msg.autor] = {
-                total:0,
-                porDia:{},
-                porHora:{}
-            };
-        }
-
-        membros[msg.autor].total++;
-
-        const dia = msg.data.toISOString().split("T")[0];
-
-        membros[msg.autor].porDia[dia] =
-        (membros[msg.autor].porDia[dia] || 0) + 1;
-
-        const hora = msg.data.getHours();
-
-        membros[msg.autor].porHora[hora] =
-        (membros[msg.autor].porHora[hora] || 0) + 1;
-    }
-
-    let html = "";
-
-    html += `
-    <h2>Resumo</h2>
-
-    <table>
-        <tr>
-            <th>Membro</th>
-            <th>Total</th>
-            <th>Média diária</th>
-        </tr>
-    `;
-
-    for(const nome in membros){
-
-        const media =
-        (membros[nome].total/diasPeriodo)
-        .toFixed(2);
-
-        html += `
-        <tr>
-            <td>${nome}</td>
-            <td>${membros[nome].total}</td>
-            <td>${media}</td>
-        </tr>
-        `;
-    }
-
-    html += "</table>";
-
-    for(const nome in membros){
-
-        const membro = membros[nome];
-
-        let horarioPico = "-";
-        let maior = 0;
-
-        for(const hora in membro.porHora){
-
-            if(membro.porHora[hora] > maior){
-                maior = membro.porHora[hora];
-                horarioPico = hora + "h";
-            }
-        }
-
-        html += `
-        <div class="member">
-            <h3>${nome}</h3>
-            <p>Total: ${membro.total}</p>
-            <p>Média diária: ${(membro.total/diasPeriodo).toFixed(2)}</p>
-            <p>Horário de pico: ${horarioPico}</p>
-
-            <table>
-                <tr>
-                    <th>Data</th>
-                    <th>Mensagens</th>
-                </tr>
-        `;
-
-        const dias =
-        Object.keys(membro.porDia).sort();
-
-        for(const dia of dias){
-
-            html += `
-            <tr>
-                <td>${dia}</td>
-                <td>${membro.porDia[dia]}</td>
-            </tr>
-            `;
-        }
-
-        html += `
-            </table>
+        fileInfo.innerHTML = `
+        <div class="error">
+            ${error.message}
         </div>
         `;
+
+        console.error(error);
+
     }
 
-    document.getElementById("resultado").innerHTML = html;
+}
+
+async function extractTxtFromZip(file){
+
+    const zip =
+        await JSZip.loadAsync(file);
+
+    let txtFile = null;
+
+    Object.keys(zip.files).forEach(name=>{
+
+        if(
+            name.toLowerCase().endsWith(".txt")
+        ){
+            txtFile = zip.files[name];
+        }
+
+    });
+
+    if(!txtFile){
+
+        throw new Error(
+            "Nenhum arquivo TXT encontrado no ZIP."
+        );
+
+    }
+
+    return await txtFile.async("string");
+
+}
+
+function processChat(text){
+
+    allMessages = [];
+
+    const lines = text.split("\n");
+
+    const regex =
+/^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s(\d{1,2}):(\d{2})\s-\s([^:]+):\s([\s\S]*)$/;
+
+    for(const line of lines){
+
+        const match = line.match(regex);
+
+        if(!match) continue;
+
+        let [
+            _,
+            day,
+            month,
+            year,
+            hour,
+            minute,
+            author,
+            message
+        ] = match;
+
+        if(year.length === 2){
+
+            year = "20" + year;
+
+        }
+
+        const date = new Date(
+            Number(year),
+            Number(month)-1,
+            Number(day),
+            Number(hour),
+            Number(minute)
+        );
+
+        allMessages.push({
+
+            date,
+            author: author.trim(),
+            message
+
+        });
+
+    }
+
+    if(allMessages.length === 0){
+
+        throw new Error(
+            "Nenhuma mensagem válida encontrada."
+        );
+
+    }
+
+    allMessages.sort(
+        (a,b)=>a.date-b.date
+    );
+
+    showConversationInfo();
+
+}
+
+function showConversationInfo(){
+
+    const first =
+        allMessages[0].date;
+
+    const last =
+        allMessages[
+            allMessages.length - 1
+        ].date;
+
+    const participants =
+        new Set(
+            allMessages.map(
+                m=>m.author
+            )
+        );
+
+    fileInfo.innerHTML = `
+        <div class="success">
+            Arquivo carregado com sucesso
+        </div>
+    `;
+
+    conversationRange.innerHTML = `
+        <strong>Mensagens de:</strong>
+        ${first.toLocaleString("pt-BR")}
+        <br><br>
+        <strong>Até:</strong>
+        ${last.toLocaleString("pt-BR")}
+        <br><br>
+        <strong>Total:</strong>
+        ${allMessages.length.toLocaleString("pt-BR")}
+        mensagens
+        <br>
+        <strong>Participantes:</strong>
+        ${participants.size}
+    `;
+
+    startDate.value =
+        first.toISOString().split("T")[0];
+
+    endDate.value =
+        last.toISOString().split("T")[0];
+
+    periodSection.classList.remove(
+        "hidden"
+    );
+
 }
