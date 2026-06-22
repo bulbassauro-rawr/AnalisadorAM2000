@@ -3,48 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Analisador de WhatsApp</title>
 
-<style>
-body{
-    font-family: Arial, sans-serif;
-    margin:20px;
-}
+<title>Analisador de Atividade WhatsApp</title>
 
-table{
-    border-collapse: collapse;
-    margin-top:10px;
-}
+<link rel="stylesheet" href="style.css">
 
-th,td{
-    border:1px solid #ccc;
-    padding:6px 10px;
-}
-
-.member{
-    margin-top:30px;
-    border-top:1px solid #ccc;
-    padding-top:15px;
-}
-</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
+
 <body>
 
-<h1>Analisador de Atividade</h1>
+<div class="container">
 
-<input type="file" id="fileInput">
+    <header>
 
-<p id="periodo"></p>
+        <h1>Analisador de Atividade</h1>
 
-<label>Data inicial:</label>
-<input type="date" id="inicio">
+        <p class="subtitle">
+            Analise arquivos .txt ou .zip exportados do WhatsApp
+        </p>
 
-<label>Data final:</label>
-<input type="date" id="fim">
+    </header>
 
-<button id="analisarBtn">Analisar</button>
+    <section class="upload-card">
 
-<div id="resultado"></div>
+        <h2>Arquivo</h2>
+
+        <label for="fileInput" class="dropzone">
+
+            <div>
+                <h3>Selecionar arquivo</h3>
+
+                <p>
+                    Aceita .txt e .zip
+                </p>
+            </div>
+
+        </label>
+
+        <input
+            type="file"
+            id="fileInput"
+            accept=".txt,.zip"
+            hidden
+        >
+
+        <div id="fileInfo"></div>
+
+    </section>
+
+    <section
+        id="periodSection"
+        class="card hidden"
+    >
+
+        <h2>Período disponível</h2>
+
+        <p id="conversationRange"></p>
+
+        <div class="date-grid">
+
+            <div>
+
+                <label>Data inicial</label>
+
+                <input
+                    type="date"
+                    id="startDate"
+                >
+
+            </div>
+
+            <div>
+
+                <label>Data final</label>
+
+                <input
+                    type="date"
+                    id="endDate"
+                >
+
+            </div>
+
+        </div>
+
+        <button id="analyzeBtn">
+            Analisar
+        </button>
+
+    </section>
+
+    <section
+        id="summarySection"
+        class="hidden"
+    >
+
+        <div class="summary-grid">
+
+            <div class="summary-card">
+                <h3>Mensagens</h3>
+                <span id="totalMessages">0</span>
+            </div>
+
+            <div class="summary-card">
+                <h3>Participantes</h3>
+                <span id="totalMembers">0</span>
+            </div>
+
+            <div class="summary-card">
+                <h3>Dias</h3>
+                <span id="totalDays">0</span>
+            </div>
+
+        </div>
+
+    </section>
+
+    <section
+        id="membersSection"
+        class="hidden"
+    >
+
+        <div class="section-header">
+
+            <h2>Membros</h2>
+
+            <input
+                type="text"
+                id="memberSearch"
+                placeholder="Pesquisar membro..."
+            >
+
+        </div>
+
+        <table id="membersTable">
+
+            <thead>
+
+            <tr>
+                <th>Membro</th>
+                <th>Total</th>
+                <th>Média diária</th>
+            </tr>
+
+            </thead>
+
+            <tbody></tbody>
+
+        </table>
+
+    </section>
+
+    <section
+        id="memberDetails"
+        class="hidden"
+    >
+
+        <h2>Detalhes</h2>
+
+        <div id="detailsContainer"></div>
+
+    </section>
+
+</div>
 
 <script src="script.js"></script>
 
